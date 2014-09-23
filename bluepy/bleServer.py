@@ -29,21 +29,21 @@ class service(socketserver.BaseRequestHandler):
                     else:
                         isConnected=True
                         self.request.send(b'connected\r\n')
+                        bleconn.writeCharacteristic(0x000f,binascii.a2b_hex("0100"))
             if len(data)!=0 and isConnected==True:
                 cmd=data.rstrip(b'\r\n')
-                print ("command:",cmd)
-                if cmd!=b'':
+                if cmd!=b'' and cmd!=b'c0' and cmd!=b'd0':
                     try:
-                        bleconn.writeCharacteristic(0x0011,cmd)
+                        notify=bleconn.writeCharacteristicWn(0x0011,cmd,True)
                     except BTLEException as e:
                         isConnected=False
                         self.request.send(b'error writing to device\r\n')
                     else:
                         isConnected=True
-                        self.request.send(b'ok\r\n')
+                        self.request.send(notify['d'][0])
+                        self.request.send(b'\r\n')
             if len(data)!=0 and isConnected==True and data[0]==100:
                 cmd=data.rstrip(b'\r\n')
-                print ("command:",cmd)
                 if cmd!=b'':
                     bleconn.disconnect()
                     self.request.send(b'disconnected\r\n')

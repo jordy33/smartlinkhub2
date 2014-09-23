@@ -200,6 +200,8 @@ class Peripheral:
                 raise BTLEException(BTLEException.INTERNAL_ERROR,
                                 "No response type indicator")
             respType = resp['rsp'][0]
+            if wantType=='ntfy' and respType=='wr':
+                continue
             if respType == wantType:
                 return resp
             elif respType == 'stat' and resp['state'][0] == 'disc':
@@ -210,9 +212,12 @@ class Peripheral:
                 raise BTLEException(BTLEException.COMM_ERROR, "Error from Bluetooth stack (%s)" % errcode)
             elif respType == 'ntfy':
                 DBG("Ignoring notification")
-                continue
+                return resp
+                #continue
             else:
                 raise BTLEException(BTLEException.INTERNAL_ERROR, "Unexpected response (%s)" % respType)
+
+  
 
     def status(self):
         self._writeCmd("stat\n")
@@ -305,6 +310,11 @@ class Peripheral:
         cmd = "wrr" if withResponse else "wr"
         self._writeCmd("%s %X %s\n" % (cmd, handle, binascii.b2a_hex(val).decode('utf-8')))
         return self._getResp('wr')
+
+    def writeCharacteristicWn(self, handle, val, withResponse=False):
+        cmd = "wrr" if withResponse else "wr"
+        self._writeCmd("%s %X %s\n" % (cmd, handle, binascii.b2a_hex(val).decode('utf-8')))
+        return self._getResp('ntfy')
 
     def setSecurityLevel(self, level):
         self._writeCmd("secu %s\n" % level)
